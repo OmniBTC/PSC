@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_RETRY: 10
+  CI: 1
+  RUST_BACKTRACE: short
+  RUSTUP_MAX_RETRIES: 3
+
+jobs:
+  Checks:
+    name: Fmt-Clippy-Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions-rs/toolchain@v2
+        with:
+            profile: minimal
+            toolchain: nightly-2022-10-09
+            components: rustfmt, rust-src, clippy
+            target: wasm32-unknown-unknown
+            override: true
+
+      - name: 1-Format
+        run: cargo fmt --all -- --check
+
+      - name: 2-Clippy
+        run: make clippy
+
+      - name: 3-Test
+        run: make test

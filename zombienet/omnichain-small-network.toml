@@ -1,0 +1,19 @@
+[settings]
+timeout = 10000
+
+[relaychain]
+chain = "rococo-local"
+
+[[relaychain.nodes]]
+name = "alice"
+
+[[relaychain.nodes]]
+name = "bob"
+
+[[parachains]]
+id = 2053
+cumulus_based = true
+
+[parachains.collator]
+name = "omnichain01"
+command = "omnichain"
