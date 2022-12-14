@@ -17,19 +17,17 @@
 use cumulus_primitives_core::ParaId;
 use omnichain_runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
-use sc_service::ChainType;
+use sc_service::{config::TelemetryEndpoints, ChainType};
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use sc_service::config::TelemetryEndpoints;
 
 const POLKADOT_PARA_ID: u32 = 2053;
 const DEFAULT_PROTOCOL_ID: &str = "omnichain_polkadot";
 const CHAINX_TELEMETRY_URL: &str = "wss://telemetry.chainx.org/submit/";
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec =
-	sc_service::GenericChainSpec<omnichain_runtime::GenesisConfig, Extensions>;
+pub type ChainSpec = sc_service::GenericChainSpec<omnichain_runtime::GenesisConfig, Extensions>;
 
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
@@ -127,7 +125,7 @@ pub fn development_config() -> ChainSpec {
 		Vec::new(),
 		Some(
 			TelemetryEndpoints::new(vec![(CHAINX_TELEMETRY_URL.to_string(), 0)])
-				.expect("OmniChain telemetry url is valid; qed")
+				.expect("OmniChain telemetry url is valid; qed"),
 		),
 		Some(DEFAULT_PROTOCOL_ID),
 		None,
@@ -186,7 +184,7 @@ pub fn local_testnet_config() -> ChainSpec {
 		// Telemetry
 		Some(
 			TelemetryEndpoints::new(vec![(CHAINX_TELEMETRY_URL.to_string(), 0)])
-				.expect("OmniChain telemetry url is valid; qed")
+				.expect("OmniChain telemetry url is valid; qed"),
 		),
 		// Protocol ID
 		Some(DEFAULT_PROTOCOL_ID),
