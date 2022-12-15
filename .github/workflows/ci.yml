@@ -32,6 +32,9 @@ jobs:
             target: wasm32-unknown-unknown
             override: true
 
+      - name: Install protobuf-compiler
+        run: |
+          sudo apt-get -y install protobuf-compiler
       - name: 1-Format
         run: cargo fmt --all -- --check
 
