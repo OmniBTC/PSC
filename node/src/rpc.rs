@@ -23,7 +23,7 @@
 
 use std::sync::Arc;
 
-use omnichain_runtime::{opaque::Block, AccountId, Balance, Index as Nonce};
+use omnichain_runtime::common::{opaque::Block, AccountId, Balance, Index as Nonce};
 
 use sc_client_api::AuxStore;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};

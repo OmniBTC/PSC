@@ -1,0 +1,45 @@
+[package]
+name = "asset-test-utils"
+version = "1.0.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2021"
+description = "Statemint parachain runtime"
+
+[dependencies]
+
+# Substrate
+
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32", default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32", default-features = false }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32", default-features = false }
+pallet-session = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32", default-features = false }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32", default-features = false }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32", default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32", default-features = false }
+
+# Cumulus
+pallet-collator-selection = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.32", default-features = false }
+omnichain-common = { path = "../common", default-features = false }
+
+[dev-dependencies]
+hex-literal = "0.3.4"
+
+[build-dependencies]
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
+
+[features]
+default = [ "std" ]
+std = [
+    "frame-support/std",
+	"frame-system/std",
+	"pallet-balances/std",
+	"pallet-collator-selection/std",
+    "pallet-session/std",
+    "omnichain-common/std",
+    "sp-consensus-aura/std",
+    "sp-io/std",
+    "sp-runtime/std",
+    "sp-std/std",
+]

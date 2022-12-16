@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+#![warn(unused_extern_crates)]
+
 mod chain_spec;
 #[macro_use]
 mod service;

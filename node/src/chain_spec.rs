@@ -15,7 +15,10 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use cumulus_primitives_core::ParaId;
-use omnichain_runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT};
+use omnichain_runtime::{
+	common::{AccountId, AuraId, Signature},
+	constants::currency::EXISTENTIAL_DEPOSIT,
+};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::{config::TelemetryEndpoints, ChainType};
 use serde::{Deserialize, Serialize};
@@ -76,15 +79,15 @@ where
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn template_session_keys(keys: AuraId) -> omnichain_runtime::SessionKeys {
+pub fn omnichain_session_keys(keys: AuraId) -> omnichain_runtime::SessionKeys {
 	omnichain_runtime::SessionKeys { aura: keys }
 }
 
 pub fn development_config() -> ChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "OB".into());
-	properties.insert("tokenDecimals".into(), 8.into());
-	properties.insert("ss58Format".into(), omnichain_runtime::SS58Prefix::get().into());
+	properties.insert("ss58Format".into(), 0.into());
+	properties.insert("tokenSymbol".into(), "DOT".into());
+	properties.insert("tokenDecimals".into(), 10.into());
 
 	ChainSpec::from_genesis(
 		// Name
@@ -139,9 +142,9 @@ pub fn development_config() -> ChainSpec {
 
 pub fn local_testnet_config() -> ChainSpec {
 	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "OB".into());
-	properties.insert("tokenDecimals".into(), 8.into());
-	properties.insert("ss58Format".into(), omnichain_runtime::SS58Prefix::get().into());
+	properties.insert("ss58Format".into(), 0.into());
+	properties.insert("tokenSymbol".into(), "DOT".into());
+	properties.insert("tokenDecimals".into(), 10.into());
 
 	ChainSpec::from_genesis(
 		// Name
@@ -212,7 +215,11 @@ fn testnet_genesis(
 				.to_vec(),
 		},
 		balances: omnichain_runtime::BalancesConfig {
-			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
+			balances: endowed_accounts
+				.iter()
+				.cloned()
+				.map(|k| (k, EXISTENTIAL_DEPOSIT * 4096))
+				.collect(),
 		},
 		parachain_info: omnichain_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: omnichain_runtime::CollatorSelectionConfig {
@@ -225,9 +232,9 @@ fn testnet_genesis(
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                 // account id
-						acc,                         // validator id
-						template_session_keys(aura), // session keys
+						acc.clone(),                  // account id
+						acc,                          // validator id
+						omnichain_session_keys(aura), // session keys
 					)
 				})
 				.collect(),
