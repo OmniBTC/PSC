@@ -123,6 +123,7 @@ pub fn development_config() -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
 				POLKADOT_PARA_ID.into(),
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
 			)
 		},
 		Vec::new(),
@@ -180,6 +181,7 @@ pub fn local_testnet_config() -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
 				POLKADOT_PARA_ID.into(),
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
 			)
 		},
 		// Bootnodes
@@ -207,6 +209,7 @@ fn testnet_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
+	root_key: AccountId,
 ) -> omnichain_runtime::GenesisConfig {
 	omnichain_runtime::GenesisConfig {
 		system: omnichain_runtime::SystemConfig {
@@ -214,6 +217,7 @@ fn testnet_genesis(
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 		},
+		sudo: omnichain_runtime::SudoConfig { key: Some(root_key) },
 		balances: omnichain_runtime::BalancesConfig {
 			balances: endowed_accounts
 				.iter()

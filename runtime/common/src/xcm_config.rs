@@ -61,10 +61,7 @@ impl ShouldExecute for DenyTeleportToRelayChain {
 		if message.0.iter().any(|inst| {
 			matches!(
 				inst,
-				InitiateTeleport {
-					dest: MultiLocation { parents: 1, interior: Here },
-					..
-				}
+				InitiateTeleport { dest: MultiLocation { parents: 1, interior: Here }, .. }
 			)
 		}) {
 			return Err(()); // Deny
