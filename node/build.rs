@@ -1,5 +1,5 @@
-// Copyright (C) 2022 OmniChain.
-// This file is part of OmniChain.
+// Copyright (C) 2022 Polkadot Smart Chain (PSC).
+// This file is part of PSC.
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 use substrate_build_script_utils::{generate_cargo_keys, rerun_if_git_head_changed};
 
 fn main() {
-	generate_cargo_keys();
+    generate_cargo_keys();
 
-	rerun_if_git_head_changed();
+    rerun_if_git_head_changed();
 }

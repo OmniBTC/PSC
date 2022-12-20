@@ -1,5 +1,5 @@
-// Copyright (C) 2022 OmniChain.
-// This file is part of OmniChain.
+// Copyright (C) 2022 Polkadot Smart Chain (PSC).
+// This file is part of PSC.
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,9 +17,9 @@
 use substrate_wasm_builder::WasmBuilder;
 
 fn main() {
-	WasmBuilder::new()
-		.with_current_project()
-		.export_heap_base()
-		.import_memory()
-		.build()
+    WasmBuilder::new()
+        .with_current_project()
+        .export_heap_base()
+        .import_memory()
+        .build()
 }

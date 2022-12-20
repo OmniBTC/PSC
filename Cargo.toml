@@ -4,7 +4,8 @@ members = [
 
     "pallets/assets",
 
-    "runtime/omnichain",
+    # Polkadot Smart Chain Runtime
+    "runtime/psc",
 ]
 
 [profile.dev]

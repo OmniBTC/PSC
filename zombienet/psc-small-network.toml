@@ -1,6 +1,7 @@
 [settings]
 timeout = 10000
 
+# Build https://github.com/OmniBTC/polkadot/tree/release-v0.9.32-fix
 [relaychain]
 chain = "rococo-local"
 
@@ -15,6 +16,6 @@ id = 2053
 cumulus_based = true
 
 [parachains.collator]
-name = "omnichain01"
-command = "omnichain"
+name = "psc01"
+command = "psc"
 args = [ "-lxcm=trace" ]

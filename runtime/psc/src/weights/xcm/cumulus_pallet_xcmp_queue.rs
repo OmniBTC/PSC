@@ -48,16 +48,16 @@ use sp_std::marker::PhantomData;
 /// Weights for `cumulus_pallet_xcmp_queue`.
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo<T> {
-	// Storage: XcmpQueue QueueConfig (r:1 w:1)
-	pub(crate) fn set_config_with_u32() -> Weight {
-		Weight::from_ref_time(7_362_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(1 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
-	}
-	// Storage: XcmpQueue QueueConfig (r:1 w:1)
-	pub(crate) fn set_config_with_weight() -> Weight {
-		Weight::from_ref_time(7_234_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(1 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
-	}
+     // Storage: XcmpQueue QueueConfig (r:1 w:1)
+     pub(crate) fn set_config_with_u32() -> Weight {
+          Weight::from_ref_time(7_362_000 as u64)
+               .saturating_add(T::DbWeight::get().reads(1 as u64))
+               .saturating_add(T::DbWeight::get().writes(1 as u64))
+     }
+     // Storage: XcmpQueue QueueConfig (r:1 w:1)
+     pub(crate) fn set_config_with_weight() -> Weight {
+          Weight::from_ref_time(7_234_000 as u64)
+               .saturating_add(T::DbWeight::get().reads(1 as u64))
+               .saturating_add(T::DbWeight::get().writes(1 as u64))
+     }
 }

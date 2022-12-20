@@ -1,8 +1,8 @@
 [package]
-name = "omnichain"
+name = "psc"
 version = "1.0.0"
-authors = ["The OmniChain Authors"]
-description = "OmniChain Parachain Node"
+authors = ["The Polkadot Smart Chain Authors"]
+description = "Polkadot Smart Chain Node"
 edition = "2021"
 build = "build.rs"
 
@@ -14,7 +14,7 @@ serde = { version = "1.0.145", features = ["derive"] }
 jsonrpsee = { version = "0.15.1", features = ["server"] }
 
 # Local
-omnichain-runtime = { path = "../runtime/omnichain" }
+psc-runtime = { path = "../runtime/psc" }
 
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
@@ -75,7 +75,7 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 [features]
 default = []
 runtime-benchmarks = [
-	"omnichain-runtime/runtime-benchmarks",
-	"polkadot-cli/runtime-benchmarks",
+    "psc-runtime/runtime-benchmarks",
+    "polkadot-cli/runtime-benchmarks",
 ]
-try-runtime = ["omnichain-runtime/try-runtime"]
+try-runtime = ["psc-runtime/try-runtime"]
