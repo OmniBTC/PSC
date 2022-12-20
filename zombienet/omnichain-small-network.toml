@@ -17,3 +17,4 @@ cumulus_based = true
 [parachains.collator]
 name = "omnichain01"
 command = "omnichain"
+args = [ "-lxcm=trace" ]

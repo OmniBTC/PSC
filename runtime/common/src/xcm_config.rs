@@ -50,10 +50,10 @@ where
 }
 
 // See issue #5233
-pub struct DenyReserveTransferToRelayChain;
-impl ShouldExecute for DenyReserveTransferToRelayChain {
+pub struct DenyTeleportToRelayChain;
+impl ShouldExecute for DenyTeleportToRelayChain {
 	fn should_execute<RuntimeCall>(
-		origin: &MultiLocation,
+		_origin: &MultiLocation,
 		message: &mut Xcm<RuntimeCall>,
 		_max_weight: XCMWeight,
 		_weight_credit: &mut XCMWeight,
@@ -61,29 +61,15 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 		if message.0.iter().any(|inst| {
 			matches!(
 				inst,
-				InitiateReserveWithdraw {
-					reserve: MultiLocation { parents: 1, interior: Here },
+				InitiateTeleport {
+					dest: MultiLocation { parents: 1, interior: Here },
 					..
-				} | DepositReserveAsset { dest: MultiLocation { parents: 1, interior: Here }, .. } |
-					TransferReserveAsset {
-						dest: MultiLocation { parents: 1, interior: Here },
-						..
-					}
+				}
 			)
 		}) {
 			return Err(()); // Deny
 		}
 
-		// An unexpected reserve transfer has arrived from the Relay Chain. Generally, `IsReserve`
-		// should not allow this, but we just log it here.
-		if matches!(origin, MultiLocation { parents: 1, interior: Here }) &&
-			message.0.iter().any(|inst| matches!(inst, ReserveAssetDeposited { .. }))
-		{
-			log::warn!(
-				target: "xcm::barrier",
-				"Unexpected ReserveAssetDeposited from the Relay Chain",
-			);
-		}
 		// Permit everything else
 		Ok(())
 	}

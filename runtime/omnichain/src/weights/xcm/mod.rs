@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
+#![allow(dead_code)]
+
 mod pallet_xcm_benchmarks_fungible;
 mod pallet_xcm_benchmarks_generic;
 
@@ -50,17 +52,17 @@ impl WeighMultiAssets for MultiAssets {
 	}
 }
 
-pub struct StatemintXcmWeight<Call>(core::marker::PhantomData<Call>);
-impl<Call> XcmWeightInfo<Call> for StatemintXcmWeight<Call> {
+pub struct OmniChainXcmWeight<Call>(core::marker::PhantomData<Call>);
+impl<Call> XcmWeightInfo<Call> for OmniChainXcmWeight<Call> {
 	fn withdraw_asset(assets: &MultiAssets) -> XCMWeight {
 		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::withdraw_asset())
 	}
-	// Currently there is no trusted reserve
-	fn reserve_asset_deposited(_assets: &MultiAssets) -> XCMWeight {
-		u64::MAX
+	fn reserve_asset_deposited(assets: &MultiAssets) -> XCMWeight {
+		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::deposit_reserve_asset())
 	}
-	fn receive_teleported_asset(assets: &MultiAssets) -> XCMWeight {
-		assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::receive_teleported_asset())
+	// Currently there is no trusted teleport
+	fn receive_teleported_asset(_assets: &MultiAssets) -> XCMWeight {
+		u64::MAX
 	}
 	fn query_response(_query_id: &u64, _response: &Response, _max_weight: &u64) -> XCMWeight {
 		XcmGeneric::<Runtime>::query_response().ref_time()
