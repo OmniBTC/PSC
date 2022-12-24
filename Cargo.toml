@@ -3,6 +3,8 @@ members = [
     "node",
 
     "pallets/assets",
+    "pallets/assets-bridge",
+    "pallets/ethereum-chain-id",
 
     # Polkadot Smart Chain Runtime
     "runtime/psc",
