@@ -16,7 +16,7 @@
 
 use cumulus_primitives_core::ParaId;
 use psc_runtime::{
-    common::{AccountId, AuraId, Signature},
+    common::{AccountId, AuraId, Balance, Signature},
     constants::currency::EXISTENTIAL_DEPOSIT,
 };
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
@@ -83,11 +83,53 @@ pub fn psc_session_keys(keys: AuraId) -> psc_runtime::SessionKeys {
     psc_runtime::SessionKeys { aura: keys }
 }
 
+type AssetId = u32;
+type AssetName = Vec<u8>;
+type AssetSymbol = Vec<u8>;
+type AssetDecimals = u8;
+type AssetSufficient = bool;
+type AssetMinBalance = Balance;
+
+#[allow(clippy::type_complexity)]
+fn reserved_assets(
+    root_key: &AccountId,
+) -> (
+    Vec<(AssetId, AccountId, AssetSufficient, AssetMinBalance)>,
+    Vec<(AssetId, AssetName, AssetSymbol, AssetDecimals)>,
+) {
+    (
+        vec![
+            (0, root_key.clone(), true, 10_000_000_000u128),
+            (1, root_key.clone(), true, 1u128),
+            (2, root_key.clone(), true, 10_000_000_000u128),
+            (3, root_key.clone(), true, 10_000_000_000u128),
+            (4, root_key.clone(), true, 10_000_000_000u128),
+            (5, root_key.clone(), true, 10_000_000_000u128),
+            (6, root_key.clone(), true, 10_000_000_000u128),
+            (7, root_key.clone(), true, 10_000_000_000u128),
+            (8, root_key.clone(), true, 10_000_000_000u128),
+            (9, root_key.clone(), true, 1u128),
+        ],
+        vec![
+            (0, "Reserved0".to_string().into_bytes(), "RSV0".to_string().into_bytes(), 18),
+            (1, "Reserved1".to_string().into_bytes(), "RSV1".to_string().into_bytes(), 8),
+            (2, "Reserved2".to_string().into_bytes(), "RSV2".to_string().into_bytes(), 18),
+            (3, "Reserved3".to_string().into_bytes(), "RSV3".to_string().into_bytes(), 18),
+            (4, "Reserved4".to_string().into_bytes(), "RSV4".to_string().into_bytes(), 18),
+            (5, "Reserved5".to_string().into_bytes(), "RSV5".to_string().into_bytes(), 18),
+            (6, "Reserved6".to_string().into_bytes(), "RSV6".to_string().into_bytes(), 18),
+            (7, "Reserved7".to_string().into_bytes(), "RSV7".to_string().into_bytes(), 18),
+            (8, "Reserved8".to_string().into_bytes(), "RSV8".to_string().into_bytes(), 18),
+            (9, "Reserved9".to_string().into_bytes(), "RSV9".to_string().into_bytes(), 8),
+        ],
+    )
+}
+
 pub fn development_config() -> ChainSpec {
     let mut properties = sc_chain_spec::Properties::new();
     properties.insert("ss58Format".into(), 0.into());
     properties.insert("tokenSymbol".into(), "DOT".into());
-    properties.insert("tokenDecimals".into(), 12.into());
+    properties.insert("tokenDecimals".into(), 10.into());
 
     ChainSpec::from_genesis(
         // Name
@@ -145,7 +187,7 @@ pub fn local_testnet_config() -> ChainSpec {
     let mut properties = sc_chain_spec::Properties::new();
     properties.insert("ss58Format".into(), 0.into());
     properties.insert("tokenSymbol".into(), "DOT".into());
-    properties.insert("tokenDecimals".into(), 12.into());
+    properties.insert("tokenDecimals".into(), 10.into());
 
     ChainSpec::from_genesis(
         // Name
@@ -211,6 +253,8 @@ fn testnet_genesis(
     id: ParaId,
     root_key: AccountId,
 ) -> psc_runtime::GenesisConfig {
+    let assets_info = reserved_assets(&root_key);
+
     psc_runtime::GenesisConfig {
         system: psc_runtime::SystemConfig {
             code: psc_runtime::WASM_BINARY
@@ -249,5 +293,18 @@ fn testnet_genesis(
         aura_ext: Default::default(),
         parachain_system: Default::default(),
         polkadot_xcm: psc_runtime::PolkadotXcmConfig { safe_xcm_version: Some(SAFE_XCM_VERSION) },
+        ethereum_chain_id: psc_runtime::EthereumChainIdConfig { chain_id: 1508u64 },
+        evm: Default::default(),
+        ethereum: Default::default(),
+        base_fee: psc_runtime::BaseFeeConfig::new(
+            psc_runtime::DefaultBaseFeePerGas::get(),
+            sp_runtime::Permill::from_parts(125_000),
+        ),
+        assets: psc_runtime::AssetsConfig {
+            assets: assets_info.0,
+            metadata: assets_info.1,
+            accounts: vec![],
+        },
+        assets_bridge: psc_runtime::AssetsBridgeConfig { admin_key: None },
     }
 }

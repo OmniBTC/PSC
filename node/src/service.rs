@@ -51,10 +51,24 @@ use substrate_prometheus_endpoint::Registry;
 
 use polkadot_service::CollatorPair;
 
+// Evm
+use cumulus_client_consensus_common::ParachainBlockImport;
+use fc_consensus::FrontierBlockImport;
+use fc_db::DatabaseSource;
+use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
+use futures::StreamExt;
+use sc_client_api::BlockchainEvents;
+use sc_service::BasePath;
+use std::collections::BTreeMap;
+
 /// Native executor type.
 pub struct ParachainNativeExecutor;
 
 impl sc_executor::NativeExecutionDispatch for ParachainNativeExecutor {
+    #[cfg(not(feature = "runtime-benchmarks"))]
+    type ExtendHostFunctions = ();
+
+    #[cfg(feature = "runtime-benchmarks")]
     type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
     fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
@@ -72,12 +86,38 @@ type ParachainClient = TFullClient<Block, RuntimeApi, ParachainExecutor>;
 
 type ParachainBackend = TFullBackend<Block>;
 
+pub fn frontier_database_dir(config: &Configuration) -> std::path::PathBuf {
+    let config_dir = config
+        .base_path
+        .as_ref()
+        .map(|base_path| base_path.config_dir(config.chain_spec.id()))
+        .unwrap_or_else(|| {
+            BasePath::from_project("", "", "frontier").config_dir(config.chain_spec.id())
+        });
+    config_dir.join("frontier").join("db")
+}
+
+pub fn open_frontier_backend<C>(
+    client: Arc<C>,
+    config: &Configuration,
+) -> Result<Arc<fc_db::Backend<Block>>, String>
+where
+    C: sp_blockchain::HeaderBackend<Block>,
+{
+    Ok(Arc::new(fc_db::Backend::<Block>::new(
+        client,
+        &fc_db::DatabaseSettings {
+            source: DatabaseSource::RocksDb { path: frontier_database_dir(config), cache_size: 0 },
+        },
+    )?))
+}
+
 /// Starts a `ServiceBuilder` for a full service.
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
 /// be able to perform chain operations.
 pub fn new_partial(
-    config: &Configuration,
+    config: &mut Configuration,
 ) -> Result<
     PartialComponents<
         ParachainClient,
@@ -85,7 +125,12 @@ pub fn new_partial(
         (),
         sc_consensus::DefaultImportQueue<Block, ParachainClient>,
         sc_transaction_pool::FullPool<Block, ParachainClient>,
-        (Option<Telemetry>, Option<TelemetryWorkerHandle>),
+        (
+            ParachainBlockImport<FrontierBlockImport<Block, Arc<ParachainClient>, ParachainClient>>,
+            Option<Telemetry>,
+            Option<TelemetryWorkerHandle>,
+            Arc<fc_db::Backend<Block>>,
+        ),
     >,
     sc_service::Error,
 > {
@@ -130,8 +175,13 @@ pub fn new_partial(
         client.clone(),
     );
 
+    let frontier_backend = open_frontier_backend(client.clone(), config)?;
+    let frontier_block_import =
+        FrontierBlockImport::new(client.clone(), client.clone(), frontier_backend.clone());
+
     let import_queue = build_import_queue(
         client.clone(),
+        ParachainBlockImport::new(frontier_block_import.clone()),
         config,
         telemetry.as_ref().map(|telemetry| telemetry.handle()),
         &task_manager,
@@ -145,7 +195,12 @@ pub fn new_partial(
         task_manager,
         transaction_pool,
         select_chain: (),
-        other: (telemetry, telemetry_worker_handle),
+        other: (
+            ParachainBlockImport::new(frontier_block_import),
+            telemetry,
+            telemetry_worker_handle,
+            frontier_backend,
+        ),
     })
 }
 
@@ -181,10 +236,11 @@ async fn start_node_impl(
     id: ParaId,
     hwbench: Option<sc_sysinfo::HwBench>,
 ) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)> {
-    let parachain_config = prepare_node_config(parachain_config);
+    let mut parachain_config = prepare_node_config(parachain_config);
 
-    let params = new_partial(&parachain_config)?;
-    let (mut telemetry, telemetry_worker_handle) = params.other;
+    let params = new_partial(&mut parachain_config)?;
+    let (parachain_block_import, mut telemetry, telemetry_worker_handle, frontier_backend) =
+        params.other;
 
     let client = params.client.clone();
     let backend = params.backend.clone();
@@ -224,18 +280,84 @@ async fn start_node_impl(
             warp_sync: None,
         })?;
 
+    let filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
+    let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
+    let overrides = crate::rpc::overrides_handle(client.clone());
+
+    // Frontier offchain DB task. Essential.
+    // Maps emulated ethereum data to substrate native data.
+    task_manager.spawn_essential_handle().spawn(
+        "frontier-mapping-sync-worker",
+        Some("frontier"),
+        fc_mapping_sync::MappingSyncWorker::new(
+            client.import_notification_stream(),
+            Duration::new(6, 0),
+            client.clone(),
+            backend.clone(),
+            frontier_backend.clone(),
+            3,
+            0,
+            fc_mapping_sync::SyncStrategy::Parachain,
+        )
+        .for_each(|()| futures::future::ready(())),
+    );
+
+    // Frontier `EthFilterApi` maintenance. Manages the pool of user-created Filters.
+    // Each filter is allowed to stay in the pool for 100 blocks.
+    const FILTER_RETAIN_THRESHOLD: u64 = 100;
+    task_manager.spawn_essential_handle().spawn(
+        "frontier-filter-pool",
+        Some("frontier"),
+        fc_rpc::EthTask::filter_pool_task(
+            client.clone(),
+            filter_pool.clone(),
+            FILTER_RETAIN_THRESHOLD,
+        ),
+    );
+
+    const FEE_HISTORY_LIMIT: u64 = 2048;
+    task_manager.spawn_essential_handle().spawn(
+        "frontier-fee-history",
+        Some("frontier"),
+        fc_rpc::EthTask::fee_history_task(
+            client.clone(),
+            overrides.clone(),
+            fee_history_cache.clone(),
+            FEE_HISTORY_LIMIT,
+        ),
+    );
+
+    let block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
+        task_manager.spawn_handle(),
+        overrides.clone(),
+        50,
+        50,
+        prometheus_registry.clone(),
+    ));
+
     let rpc_builder = {
         let client = client.clone();
         let transaction_pool = transaction_pool.clone();
+        let network = network.clone();
 
-        Box::new(move |deny_unsafe, _| {
+        Box::new(move |deny_unsafe, subscription| {
             let deps = crate::rpc::FullDeps {
                 client: client.clone(),
                 pool: transaction_pool.clone(),
                 deny_unsafe,
+                graph: transaction_pool.pool().clone(),
+                network: network.clone(),
+                is_authority: validator,
+                backend: frontier_backend.clone(),
+                filter_pool: filter_pool.clone(),
+                fee_history_cache_limit: FEE_HISTORY_LIMIT,
+                fee_history_cache: fee_history_cache.clone(),
+                block_data_cache: block_data_cache.clone(),
+                overrides: overrides.clone(),
+                max_past_logs: 10000,
             };
 
-            crate::rpc::create_full(deps).map_err(Into::into)
+            crate::rpc::create_full(deps, subscription).map_err(Into::into)
         })
     };
 
@@ -276,6 +398,7 @@ async fn start_node_impl(
     if validator {
         let parachain_consensus = build_consensus(
             client.clone(),
+            parachain_block_import,
             prometheus_registry.as_ref(),
             telemetry.as_ref().map(|t| t.handle()),
             &task_manager,
@@ -325,6 +448,9 @@ async fn start_node_impl(
 /// Build the import queue for the parachain runtime.
 fn build_import_queue(
     client: Arc<ParachainClient>,
+    block_import: ParachainBlockImport<
+        FrontierBlockImport<Block, Arc<ParachainClient>, ParachainClient>,
+    >,
     config: &Configuration,
     telemetry: Option<TelemetryHandle>,
     task_manager: &TaskManager,
@@ -339,7 +465,7 @@ fn build_import_queue(
           _,
           _,
      >(cumulus_client_consensus_aura::ImportQueueParams {
-          block_import: client.clone(),
+          block_import,
           client,
           create_inherent_data_providers: move |_, _| async move {
                let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
@@ -361,6 +487,9 @@ fn build_import_queue(
 
 fn build_consensus(
     client: Arc<ParachainClient>,
+    block_import: ParachainBlockImport<
+        FrontierBlockImport<Block, Arc<ParachainClient>, ParachainClient>,
+    >,
     prometheus_registry: Option<&Registry>,
     telemetry: Option<TelemetryHandle>,
     task_manager: &TaskManager,
@@ -371,10 +500,12 @@ fn build_consensus(
     force_authoring: bool,
     id: ParaId,
 ) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error> {
+    let spawn_handle = task_manager.spawn_handle();
+
     let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
 
     let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
-        task_manager.spawn_handle(),
+        spawn_handle,
         client.clone(),
         transaction_pool,
         prometheus_registry,
@@ -396,11 +527,10 @@ fn build_consensus(
                     .await;
                 let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
-                let slot =
-                              sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-                                   *timestamp,
-                                   slot_duration,
-                              );
+                let slot = sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+                    *timestamp,
+                    slot_duration,
+                );
 
                 let parachain_inherent = parachain_inherent.ok_or_else(|| {
                     Box::<dyn std::error::Error + Send + Sync>::from(
@@ -410,7 +540,7 @@ fn build_consensus(
                 Ok((slot, timestamp, parachain_inherent))
             }
         },
-        block_import: client.clone(),
+        block_import,
         para_client: client,
         backoff_authoring_blocks: Option::<()>::None,
         sync_oracle,

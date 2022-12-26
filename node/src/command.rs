@@ -36,7 +36,7 @@ use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 use crate::{
     chain_spec,
     cli::{Cli, RelayChainCli, Subcommand},
-    service::{new_partial, ParachainNativeExecutor},
+    service::{frontier_database_dir, new_partial, ParachainNativeExecutor},
 };
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
@@ -131,8 +131,8 @@ impl SubstrateCli for RelayChainCli {
 macro_rules! construct_async_run {
      (|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
           let runner = $cli.create_runner($cmd)?;
-          runner.async_run(|$config| {
-               let $components = new_partial(&$config)?;
+          runner.async_run(|mut $config| {
+               let $components = new_partial(&mut $config)?;
                let task_manager = $components.task_manager;
                { $( $code )* }.map(|v| (v, task_manager))
           })
@@ -177,6 +177,13 @@ pub fn run() -> Result<()> {
             let runner = cli.create_runner(cmd)?;
 
             runner.sync_run(|config| {
+                // Remove Frontier offchain db
+                let frontier_database_config = sc_service::DatabaseSource::RocksDb {
+                    path: frontier_database_dir(&config),
+                    cache_size: 0,
+                };
+                cmd.base.run(frontier_database_config)?;
+
                 let polkadot_cli = RelayChainCli::new(
                     &config,
                     [RelayChainCli::executable_name()].iter().chain(cli.relay_chain_args.iter()),
@@ -219,8 +226,8 @@ pub fn run() -> Result<()> {
                          You can enable it with `--features runtime-benchmarks`."
                             .into())
                     },
-                BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
-                    let partials = new_partial(&config)?;
+                BenchmarkCmd::Block(cmd) => runner.sync_run(|mut config| {
+                    let partials = new_partial(&mut config)?;
                     cmd.run(partials.client)
                 }),
                 #[cfg(not(feature = "runtime-benchmarks"))]

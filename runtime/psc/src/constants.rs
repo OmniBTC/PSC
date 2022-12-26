@@ -60,9 +60,9 @@ pub mod fee {
         type Balance = Balance;
         fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
             // in Polkadot, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 CENT:
-            // in Statemint, we map to 1/10 of that, or 1/100 CENT
+            // in PSC, we map to the same 1/10 CENT
             let p = super::currency::CENTS;
-            let q = 100 * Balance::from(ExtrinsicBaseWeight::get().ref_time());
+            let q = 10 * Balance::from(ExtrinsicBaseWeight::get().ref_time());
             smallvec![WeightToFeeCoefficient {
                 degree: 1,
                 negative: false,
