@@ -1,0 +1,14 @@
+polkadot build-spec --chain rococo-local --disable-default-bootnode > rococo-local.json
+# polkadot build-spec --chain rococo-local.json --disable-default-bootnode --raw > rococo-local-raw.json
+psc build-spec  --disable-default-bootnode --chain=genesis > 2053.json
+# polkadot -> rococo-local
+# psc build-spec  --disable-default-bootnode --chain=./2053.json --raw > 2053-raw.json
+
+psc export-genesis-state --chain 2053-raw.json > genesis-state
+psc export-genesis-wasm --chain 2053-raw.json > genesis-wasm
+
+polkadot --chain rococo-local-raw.json -d data-alice --name alice --alice --rpc-cors all --unsafe-rpc-external --rpc-methods unsafe --unsafe-ws-external --validator --rpc-port 44713 --ws-port 46757  --port 38013
+
+polkadot --chain rococo-local-raw.json -d data-bob --name bob --bob --rpc-cors all --unsafe-rpc-external --rpc-methods unsafe --unsafe-ws-external --validator --rpc-port 44714 --ws-port 46758  --port 38014
+
+psc --chain 2053-raw.json -d data-2053 --name psc01 --rpc-cors all --unsafe-rpc-external --rpc-methods unsafe --unsafe-ws-external --collator --keystore-path keystore/keystore --rpc-port 8545 --ws-port 9977  -lxcm=trace,evm=trace -- -d data-relay  --chain rococo-local-raw.json --execution wasm --ws-port 9944 --rpc-port 43361 --port 44559
