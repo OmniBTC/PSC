@@ -15,15 +15,17 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use cumulus_primitives_core::ParaId;
+use hex_literal::hex;
+use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
+use sc_service::{ChainType, config::TelemetryEndpoints};
+use serde::{Deserialize, Serialize};
+use sp_core::{Pair, Public, sr25519, crypto::UncheckedInto};
+use sp_runtime::traits::{IdentifyAccount, Verify};
+
 use psc_runtime::{
     common::{AccountId, AuraId, Balance, Signature},
     constants::currency::EXISTENTIAL_DEPOSIT,
 };
-use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
-use sc_service::{config::TelemetryEndpoints, ChainType};
-use serde::{Deserialize, Serialize};
-use sp_core::{sr25519, Pair, Public};
-use sp_runtime::traits::{IdentifyAccount, Verify};
 
 const POLKADOT_PARA_ID: u32 = 2053;
 const DEFAULT_PROTOCOL_ID: &str = "psc_polkadot";
@@ -70,8 +72,8 @@ pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
 
 /// Helper function to generate an account ID from seed
 pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
-where
-    AccountPublic: From<<TPublic::Pair as Pair>::Public>,
+    where
+        AccountPublic: From<<TPublic::Pair as Pair>::Public>,
 {
     AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
 }
@@ -138,7 +140,7 @@ pub fn development_config() -> ChainSpec {
         "dev",
         ChainType::Development,
         move || {
-            testnet_genesis(
+            psc_genesis(
                 // initial collators.
                 vec![
                     (
@@ -183,7 +185,7 @@ pub fn development_config() -> ChainSpec {
     )
 }
 
-pub fn local_testnet_config() -> ChainSpec {
+pub fn psc_config() -> ChainSpec {
     let mut properties = sc_chain_spec::Properties::new();
     properties.insert("ss58Format".into(), 0.into());
     properties.insert("tokenSymbol".into(), "DOT".into());
@@ -191,39 +193,23 @@ pub fn local_testnet_config() -> ChainSpec {
 
     ChainSpec::from_genesis(
         // Name
-        "Local Testnet",
+        "Polkadot Smart Chain",
         // ID
-        "local_testnet",
-        ChainType::Local,
+        "psc",
+        ChainType::Live,
         move || {
-            testnet_genesis(
+            psc_genesis(
                 // initial collators.
                 vec![
                     (
-                        get_account_id_from_seed::<sr25519::Public>("Alice"),
-                        get_collator_keys_from_seed("Alice"),
-                    ),
-                    (
-                        get_account_id_from_seed::<sr25519::Public>("Bob"),
-                        get_collator_keys_from_seed("Bob"),
+                        // 135jgXDi2HPt8KDmHrxLz44sNzNg1Dp3dcWmkmeQMaY9M8he
+                        hex!("5c15207d5d764cc633fc7c29da559a1efc8a4369ce7868daeaf8844c6fc68739").into(),
+                        hex!("ac0d16845456daf555c0102297f6337e52e600d879497610eb0ccf5c7e09485b").unchecked_into(),
                     ),
                 ],
-                vec![
-                    get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                    get_account_id_from_seed::<sr25519::Public>("Dave"),
-                    get_account_id_from_seed::<sr25519::Public>("Eve"),
-                    get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-                    get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-                ],
+                vec![],
                 POLKADOT_PARA_ID.into(),
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                hex!("5c15207d5d764cc633fc7c29da559a1efc8a4369ce7868daeaf8844c6fc68739").into(),
             )
         },
         // Bootnodes
@@ -241,13 +227,13 @@ pub fn local_testnet_config() -> ChainSpec {
         Some(properties),
         // Extensions
         Extensions {
-            relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
+            relay_chain: "polkadot".into(), // You MUST set this to the correct network!
             para_id: POLKADOT_PARA_ID,
         },
     )
 }
 
-fn testnet_genesis(
+fn psc_genesis(
     invulnerables: Vec<(AccountId, AuraId)>,
     endowed_accounts: Vec<AccountId>,
     id: ParaId,

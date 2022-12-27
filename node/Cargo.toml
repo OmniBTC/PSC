@@ -12,6 +12,7 @@ log = "0.4.17"
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 serde = { version = "1.0.145", features = ["derive"] }
 jsonrpsee = { version = "0.15.1", features = ["server"] }
+hex-literal = "0.3.4"
 
 # Local
 psc-runtime = { path = "../runtime/psc" }
