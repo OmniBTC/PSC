@@ -298,7 +298,7 @@ fn testnet_genesis(
         ethereum: Default::default(),
         base_fee: psc_runtime::BaseFeeConfig::new(
             psc_runtime::DefaultBaseFeePerGas::get(),
-            sp_runtime::Permill::from_parts(125_000),
+            sp_runtime::Permill::zero(),
         ),
         assets: psc_runtime::AssetsConfig {
             assets: assets_info.0,

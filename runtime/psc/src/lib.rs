@@ -75,7 +75,7 @@ use pallet_evm::{
 
 // Polkadot imports
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
-use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
+use polkadot_runtime_common::{BlockHashCount, Bounded};
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
 #[cfg(any(feature = "std", test))]
@@ -87,7 +87,7 @@ use sp_runtime::{
         PostDispatchInfoOf, UniqueSaturatedInto,
     },
     transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
-    ApplyExtrinsicResult, Permill,
+    ApplyExtrinsicResult, FixedPointNumber, Permill, Perquintill,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -97,12 +97,13 @@ use xcm::latest::BodyId;
 use xcm_executor::XcmExecutor;
 
 use constants::{currency::*, fee::WeightToFee};
+use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
 pub use precompiles::PscPrecompiles;
 pub use psc_common as common;
 use psc_common::{
-    impls::DealWithFees, opaque, AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header,
-    Index, Signature, AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT,
-    NORMAL_DISPATCH_RATIO, SLOT_DURATION,
+    impls::{DealWithFees, ToStakingPot},
+    opaque, AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
+    AVERAGE_ON_INITIALIZE_RATIO, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, SLOT_DURATION,
 };
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 use xcm_config::{DotLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
@@ -117,9 +118,9 @@ mod weights;
 pub mod xcm_config;
 
 impl_opaque_keys! {
-       pub struct SessionKeys {
-               pub aura: Aura,
-       }
+    pub struct SessionKeys {
+        pub aura: Aura,
+    }
 }
 
 #[sp_version::runtime_version]
@@ -141,28 +142,28 @@ pub fn native_version() -> NativeVersion {
 }
 
 parameter_types! {
-       pub const Version: RuntimeVersion = VERSION;
-       pub RuntimeBlockLength: BlockLength =
-               BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
-       pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
-               .base_block(BlockExecutionWeight::get())
-               .for_class(DispatchClass::all(), |weights| {
-                      weights.base_extrinsic = ExtrinsicBaseWeight::get();
-               })
-               .for_class(DispatchClass::Normal, |weights| {
-                      weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
-               })
-               .for_class(DispatchClass::Operational, |weights| {
-                      weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
-                      // Operational transactions have some extra reserved space, so that they
-                      // are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
-                      weights.reserved = Some(
-                               MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
-                      );
-               })
-               .avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
-               .build_or_panic();
-       pub const SS58Prefix: u8 = 0;
+    pub const Version: RuntimeVersion = VERSION;
+    pub RuntimeBlockLength: BlockLength =
+        BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+    pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
+            .base_block(BlockExecutionWeight::get())
+            .for_class(DispatchClass::all(), |weights| {
+                weights.base_extrinsic = ExtrinsicBaseWeight::get();
+            })
+            .for_class(DispatchClass::Normal, |weights| {
+                weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
+            })
+            .for_class(DispatchClass::Operational, |weights| {
+                weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
+                // Operational transactions have some extra reserved space, so that they
+                // are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
+                weights.reserved = Some(
+                    MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
+                );
+            })
+            .avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
+            .build_or_panic();
+    pub const SS58Prefix: u8 = 0;
 }
 
 // Configure FRAME pallets to include in runtime.
@@ -194,7 +195,7 @@ impl frame_system::Config for Runtime {
 }
 
 parameter_types! {
-       pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
+    pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
 }
 
 impl pallet_timestamp::Config for Runtime {
@@ -206,7 +207,7 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-       pub const UncleGenerations: u32 = 0;
+    pub const UncleGenerations: u32 = 0;
 }
 
 impl pallet_authorship::Config for Runtime {
@@ -217,9 +218,9 @@ impl pallet_authorship::Config for Runtime {
 }
 
 parameter_types! {
-       pub const ExistentialDeposit: Balance = EXISTENTIAL_DEPOSIT;
-       pub const MaxLocks: u32 = 50;
-       pub const MaxReserves: u32 = 50;
+    pub const ExistentialDeposit: Balance = EXISTENTIAL_DEPOSIT;
+    pub const MaxLocks: u32 = 50;
+    pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -228,7 +229,7 @@ impl pallet_balances::Config for Runtime {
     type Balance = Balance;
     /// The ubiquitous event type.
     type RuntimeEvent = RuntimeEvent;
-    type DustRemoval = ();
+    type DustRemoval = ToStakingPot<Runtime>;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = weights::pallet_balances::WeightInfo<Runtime>;
@@ -237,10 +238,23 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-       /// Relay Chain `TransactionByteFee` / 10
-       pub const TransactionByteFee: Balance = MILLICENTS;
-       pub const OperationalFeeMultiplier: u8 = 5;
+    /// Relay Chain `TransactionByteFee` / 10
+    pub const TransactionByteFee: Balance = MILLICENTS;
+    pub const OperationalFeeMultiplier: u8 = 5;
+
+    pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
+    pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 100_000);
+    pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(90, 100);
+    pub MaximumMultiplier: Multiplier = Bounded::max_value();
 }
+
+pub type SlowAdjustingFeeUpdate<R> = TargetedFeeAdjustment<
+    R,
+    TargetBlockFullness,
+    AdjustmentVariable,
+    MinimumMultiplier,
+    MaximumMultiplier,
+>;
 
 impl pallet_transaction_payment::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
@@ -253,15 +267,15 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 parameter_types! {
-       pub const AssetDeposit: Balance = 10 * UNITS; // 10 UNITS deposit to create fungible asset class
-       pub const AssetAccountDeposit: Balance = deposit(1, 16);
-       pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
-       pub const AssetsStringLimit: u32 = 50;
-       /// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
-       // https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
-       pub const MetadataDepositBase: Balance = deposit(1, 68);
-       pub const MetadataDepositPerByte: Balance = deposit(0, 1);
-       pub const ExecutiveBody: BodyId = BodyId::Executive;
+    pub const AssetDeposit: Balance = 10 * UNITS; // 10 UNITS deposit to create fungible asset class
+    pub const AssetAccountDeposit: Balance = deposit(1, 16);
+    pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
+    pub const AssetsStringLimit: u32 = 50;
+    /// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
+    // https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
+    pub const MetadataDepositBase: Balance = deposit(1, 68);
+    pub const MetadataDepositPerByte: Balance = deposit(0, 1);
+    pub const ExecutiveBody: BodyId = BodyId::Executive;
 }
 
 impl pallet_assets::Config for Runtime {
@@ -282,11 +296,11 @@ impl pallet_assets::Config for Runtime {
 }
 
 parameter_types! {
-       // One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
-       pub const DepositBase: Balance = deposit(1, 88);
-       // Additional storage item size of 32 bytes.
-       pub const DepositFactor: Balance = deposit(0, 32);
-       pub const MaxSignatories: u16 = 100;
+    // One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
+    pub const DepositBase: Balance = deposit(1, 88);
+    // Additional storage item size of 32 bytes.
+    pub const DepositFactor: Balance = deposit(0, 32);
+    pub const MaxSignatories: u16 = 100;
 }
 
 impl pallet_multisig::Config for Runtime {
@@ -307,8 +321,8 @@ impl pallet_utility::Config for Runtime {
 }
 
 parameter_types! {
-       pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
-       pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
+    pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
+    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
@@ -345,9 +359,9 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 }
 
 parameter_types! {
-       pub const Period: u32 = 6 * HOURS;
-       pub const Offset: u32 = 0;
-       pub const MaxAuthorities: u32 = 100_000;
+    pub const Period: u32 = 6 * HOURS;
+    pub const Offset: u32 = 0;
+    pub const MaxAuthorities: u32 = 100_000;
 }
 
 impl pallet_session::Config for Runtime {
@@ -371,11 +385,11 @@ impl pallet_aura::Config for Runtime {
 }
 
 parameter_types! {
-       pub const PotId: PalletId = PalletId(*b"PotStake");
-       pub const MaxCandidates: u32 = 1000;
-       pub const MinCandidates: u32 = 5;
-       pub const SessionLength: BlockNumber = 6 * HOURS;
-       pub const MaxInvulnerables: u32 = 100;
+    pub const PotId: PalletId = PalletId(*b"PotStake");
+    pub const MaxCandidates: u32 = 1000;
+    pub const MinCandidates: u32 = 5;
+    pub const SessionLength: BlockNumber = 6 * HOURS;
+    pub const MaxInvulnerables: u32 = 100;
 }
 
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
@@ -458,7 +472,7 @@ impl pallet_ethereum::Config for Runtime {
 }
 
 parameter_types! {
-    pub DefaultBaseFeePerGas: U256 = U256::from(800_000_000_000u128);
+    pub DefaultBaseFeePerGas: U256 = U256::from(220_000_000_000u128);
     pub DefaultElasticity: Permill = Permill::from_parts(125_000);
 }
 
