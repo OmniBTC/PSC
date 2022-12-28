@@ -177,7 +177,7 @@ pub fn development_config() -> ChainSpec {
         ),
         Some(DEFAULT_PROTOCOL_ID),
         None,
-        None,
+        Some(properties),
         Extensions {
             relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
             para_id: POLKADOT_PARA_ID,
