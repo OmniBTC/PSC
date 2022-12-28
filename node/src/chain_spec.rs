@@ -17,9 +17,9 @@
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
-use sc_service::{ChainType, config::TelemetryEndpoints};
+use sc_service::{config::TelemetryEndpoints, ChainType};
 use serde::{Deserialize, Serialize};
-use sp_core::{Pair, Public, sr25519, crypto::UncheckedInto};
+use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 use psc_runtime::{
@@ -72,8 +72,8 @@ pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
 
 /// Helper function to generate an account ID from seed
 pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
-    where
-        AccountPublic: From<<TPublic::Pair as Pair>::Public>,
+where
+    AccountPublic: From<<TPublic::Pair as Pair>::Public>,
 {
     AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
 }
@@ -200,13 +200,12 @@ pub fn psc_config() -> ChainSpec {
         move || {
             psc_genesis(
                 // initial collators.
-                vec![
-                    (
-                        // 135jgXDi2HPt8KDmHrxLz44sNzNg1Dp3dcWmkmeQMaY9M8he
-                        hex!("5c15207d5d764cc633fc7c29da559a1efc8a4369ce7868daeaf8844c6fc68739").into(),
-                        hex!("ac0d16845456daf555c0102297f6337e52e600d879497610eb0ccf5c7e09485b").unchecked_into(),
-                    ),
-                ],
+                vec![(
+                    // 135jgXDi2HPt8KDmHrxLz44sNzNg1Dp3dcWmkmeQMaY9M8he
+                    hex!("5c15207d5d764cc633fc7c29da559a1efc8a4369ce7868daeaf8844c6fc68739").into(),
+                    hex!("ac0d16845456daf555c0102297f6337e52e600d879497610eb0ccf5c7e09485b")
+                        .unchecked_into(),
+                )],
                 vec![],
                 POLKADOT_PARA_ID.into(),
                 hex!("5c15207d5d764cc633fc7c29da559a1efc8a4369ce7868daeaf8844c6fc68739").into(),
