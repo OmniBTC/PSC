@@ -42,11 +42,24 @@ async function main () {
         contributor: ss58Keys[idx],
         balance: api.createType('(Balance, Vec<u8>)', v.unwrap()).toJSON()[0],
     }));
+    const contributions_ob = contributions.map((v) => ({
+        contributor: v.contributor,
+        balance: v.balance,
+        ob: Math.floor(v.balance / 100 * 33 / 100)
+    }));
 
-    console.log(contributions);
+    console.log(contributions_ob);
+
+    var total_dot = 0;
+    contributions_ob.forEach(function (v, i, arr) {total_dot += v.balance});
+    console.log("total_dot: ", total_dot)
+
+    var total_ob = 0;
+    contributions_ob.forEach(function (v, i, arr) {total_ob += v.ob});
+    console.log("total_ob: ", total_ob)
 
     if (dumpJson) {
-        const jsonStr = JSON.stringify(contributions, undefined, 2);
+        const jsonStr = JSON.stringify(contributions_ob, undefined, 2);
         fs.writeFileSync(dumpJson, jsonStr, {encoding: 'utf-8'});
     }
 }
