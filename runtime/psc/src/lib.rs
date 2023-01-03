@@ -128,7 +128,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("psc"),
     impl_name: create_runtime_str!("psc"),
     authoring_version: 1,
-    spec_version: 1,
+    spec_version: 2,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -420,7 +420,7 @@ impl pallet_sudo::Config for Runtime {
 parameter_types! {
     // 0x1111111111111111111111111111111111111111
     pub EvmCaller: H160 = H160::from_slice(&[17u8;20][..]);
-    pub ClaimBond: Balance = UNITS;
+    pub ClaimBond: Balance = 10 * EXISTENTIAL_DEPOSIT;
 }
 impl pallet_assets_bridge::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
