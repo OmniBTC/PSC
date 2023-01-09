@@ -18,3 +18,25 @@ There are `DOT` and assets of each parachain on the Polkadot platform. We will d
 ## Transfer DOT from PSC to Polkadot by UMP
 
 ![ump](./docs/ump.png)
+
+## **metamask config**
+```txt
+Network name: Polkadot Smart Chain
+RPC URL: https://psc-parachain.coming.chat/rpc
+Chain ID: 1508
+Currency symbol: DOT
+```
+
+for [local zombienet](./zombienet/psc-small-network.toml), use `RPC URL: http://127.0.0.1:8546`
+
+## Substrate Account & EVM address
+see [assets-bridge](./pallets/assets-bridge/README.md)
+
+[convert evm address to dot account](./scripts/js/src/evm_to_dot.js)
+
+```txt
+EXISTENTIAL_DEPOSIT = 0.01 DOT
+wasm transfer:  0.0047732 DOT
+evm transfer:  0.0046515 DOT
+evm-address mapping reseve: 0.1 DOT
+```

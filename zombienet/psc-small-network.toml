@@ -7,6 +7,7 @@ chain = "rococo-local"
 
 [[relaychain.nodes]]
 name = "alice"
+ws_port = 9944
 
 [[relaychain.nodes]]
 name = "bob"
@@ -20,3 +21,5 @@ chain = "dev"
 name = "psc01"
 command = "psc"
 args = [ "-lxcm=trace,evm=trace", "--pruning=archive" ]
+ws_port = 9977
+rpc_port = 8546

@@ -246,7 +246,7 @@ fn psc_genesis(
                 .expect("WASM binary was not build, please build it!")
                 .to_vec(),
         },
-        sudo: psc_runtime::SudoConfig { key: Some(root_key) },
+        sudo: psc_runtime::SudoConfig { key: Some(root_key.clone()) },
         balances: psc_runtime::BalancesConfig {
             balances: endowed_accounts
                 .iter()
@@ -290,6 +290,6 @@ fn psc_genesis(
             metadata: assets_info.1,
             accounts: vec![],
         },
-        assets_bridge: psc_runtime::AssetsBridgeConfig { admin_key: None },
+        assets_bridge: psc_runtime::AssetsBridgeConfig { admin_key: Some(root_key) },
     }
 }

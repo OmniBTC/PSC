@@ -1,10 +1,12 @@
 # AssetsBridge
-A bridge from [substrate assets(wasm)](../assets) into [ERC20 tokens(evm)](../../contracts/AssetsBridgeErc20_istanbul.sol).
+A bridge from [substrate assets(wasm)](../assets) into [ERC20 tokens(evm)](../../contracts/AssetsBridgeErc20.sol).
 
 ## Overview
 
  [How does frontier manage the substrate account and ethereum account](https://github.com/chainx-org/chainx-technical-archive/blob/main/ZhaoJianBing/substrate_account_and_ethereum_account.md)
-  
+ 
+ [Substrate Account & EVM address](https://iconosphereio.medium.com/substrate-evm-address-39bfa92f875c)
+
 In AssetsBridge
 - substrate assets `->` erc20 tokens: `deposit`
 - substrate assets `<-` erc20 tokens: `withdraw`
@@ -52,12 +54,12 @@ the sign data: "evm:d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56d
 ```
 
 ## companion with `relay`
-- `Foreign assets`(on other chain) -> `SherpaX assets` flow:
+- `Foreign assets`(on other chain) -> `PSC assets` flow:
   - (1) `user` need `transfer` to the account which under the control of `assets-bridge admin` on `foreign chain`
-  - (2) `mint` to `user` by `assets-bridge admin` on `sherpax chain`
+  - (2) `mint` to `user` by `assets-bridge admin` on `PSC`
 
-- `SherpaX assets` -> `Foreign assets`(on other chain) flow:
-  - (1) `user` need `teleport` with `BackForeign(asset_id)` on `sherpax chain`. 
+- `PSC assets` -> `Foreign assets`(on other chain) flow:
+  - (1) `user` need `teleport` with `BackForeign(asset_id)` on `PSC`. 
   - (2) the account which under the control of `assets-bridge admin` on `foreign chain` `transfer` to `user`
 
 - `maintenance` by `admin`: `back_foreign` add or remove `asset_id` which can back foreign chain.
@@ -65,4 +67,4 @@ the sign data: "evm:d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56d
 
 For safety, AssetsBridge now only allows dependent 
 [AssetsBridge assets(wasm)](../assets) and 
-[AssetsBridge tokens(evm)](../../contracts/AssetsBridgeErc20_istanbul.sol).
+[AssetsBridge tokens(evm)](../../contracts/AssetsBridgeErc20.sol).
