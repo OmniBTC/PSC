@@ -1,7 +1,7 @@
 [package]
 name = "pallet-assets-bridge"
 version = "1.4.0"
-authors = ["The Polkadot Smart Chain Authors"]
+authors = ["The Polkadot Smart Chain Authors and ChainX Authors"]
 edition = "2021"
 
 [dependencies]
