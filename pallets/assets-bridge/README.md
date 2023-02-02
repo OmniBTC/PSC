@@ -3,9 +3,7 @@ A bridge from [substrate assets(wasm)](../assets) into [ERC20 tokens(evm)](../..
 
 ## Overview
 
- [How does frontier manage the substrate account and ethereum account](https://github.com/chainx-org/chainx-technical-archive/blob/main/ZhaoJianBing/substrate_account_and_ethereum_account.md)
- 
- [Substrate Account & EVM address](https://iconosphereio.medium.com/substrate-evm-address-39bfa92f875c)
+ [Substrate & EVM address on PSC](../../docs/substrate_and_evm_address_on_psc.md)
 
 In AssetsBridge
 - substrate assets `->` erc20 tokens: `deposit`
