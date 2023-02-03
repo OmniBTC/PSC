@@ -44,7 +44,8 @@ Run: [zombienet-linux-x64 spawn --provider podman ./psc-small-network.toml](./zo
 
 ![ump](./docs/ump.png)
 
-## **metamask config**
+## Evm support
+### metamask (for account)
 ```txt
 Network name: Polkadot Smart Chain
 RPC URL: https://psc-parachain.coming.chat/rpc
@@ -52,13 +53,28 @@ Chain ID: 1508
 Currency symbol: DOT
 ```
 
-for [local zombienet](./zombienet/psc-small-network.toml), use `RPC URL: http://127.0.0.1:8546`
+For [local zombienet](./zombienet/psc-small-network.toml), use `RPC URL: http://127.0.0.1:8546`
 
-## Substrate Account & EVM address
-see [assets-bridge](./pallets/assets-bridge/README.md)
+Refer [Connect MetaMask to Moonbeam](https://docs.moonbeam.network/tokens/connect/metamask/)
 
-[convert evm address to dot account](./scripts/js/src/evm_to_dot.js)
+### Remix (for contract)
 
+Refer [Interacting with Moonbeam Using Remix](https://docs.moonbeam.network/builders/build/eth-api/dev-env/remix/)
+
+### Ethereum apis
+- [Ethereum JSON-RPC.postman_collection](./docs/Ethereum_JSON-RPC.postman_collection.json)
+- [Ethereum RPC Support](https://github.com/PureStake/moonbeam-docs-cn/blob/master/builders/get-started/eth-compare/rpc-support.md)
+- [QuickNode Ethereum RPC](https://www.quicknode.com/docs)
+- [Ethereum JSON-RPC Wiki](https://eth.wiki/json-rpc/API#)
+
+### Substrate Account & EVM address
+This [article](./docs/substrate_and_evm_address_on_psc.md) introduce how the Ethereum address and Substrste account are associated
+
+On PSC, [pallet-assets-bridge](./pallets/assets-bridge/README.md) bind EVM address and Substrate account, bind WASM assets and Erc20 tokens, deposit and withdraw fungible assets between WASM and EVM.
+
+This [tool](./scripts/js/src/evm_to_dot.js) can convert EVM address to Substrate(Polkadot) account.
+
+## Basic data
 ```txt
 EXISTENTIAL_DEPOSIT = 0.01 DOT
 wasm transfer:  0.0047732 DOT
