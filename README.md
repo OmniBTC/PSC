@@ -11,6 +11,31 @@ The ChainX team will build PSC into a cross-chain interoperability hub among the
 There are `DOT` and assets of each parachain on the Polkadot platform. We will deploy a single currency pool on the Polkadot Smart Chain to become OmniBTC’s liquidity pool site on the Polkadot platform, which is connected to other Polkadot parachains through the XCMP protocol. 
 ***Committed to allowing the original assets on Polkadot to circulate with mainstream native assets such as BTC/ETH.***
 
+## Build, test and launch local testnet
+
+### build and test
+```bash
+git clone https://github.com/OmniBTC/PSC.git
+
+cd PSC
+
+cargo test --release
+
+cargo build --release
+```
+
+### launch local testnet
+
+Use [zombienet](https://github.com/paritytech/zombienet) launch a local testnet.
+
+For `provider=native`(linux/macos, binaries), require build [psc](https://github.com/OmniBTC/PSC) and our modified [polakdot](https://github.com/OmniBTC/polkadot/tree/release-v0.9.32-fix)
+
+Run: [zombienet-linux-x64 spawn --provider native ./psc-small-network.toml](./zombienet/psc-local-launch-native.sh)
+
+For `provider=podman`(linux, dockers), require install [podman](https://podman.io/getting-started/installation)
+
+Run: [zombienet-linux-x64 spawn --provider podman ./psc-small-network.toml](./zombienet/psc-local-launch-podman.sh)
+
 ## Transfer DOT from Polkadot to PSC by DMP
 
 ![dmp](./docs/dmp.png)

@@ -3,6 +3,9 @@ timeout = 10000
 
 # Build https://github.com/OmniBTC/polkadot/tree/release-v0.9.32-fix
 [relaychain]
+default_image = "comingweb3/polkadot:v0.9.32"
+default_command = "polkadot"
+default_args = [ "-lparachain=debug" ]
 chain = "rococo-local"
 
 [[relaychain.nodes]]
@@ -18,6 +21,7 @@ cumulus_based = true
 chain = "dev"
 
 [parachains.collator]
+image = "comingweb3/psc:latest"
 name = "psc01"
 command = "psc"
 args = [ "-lxcm=trace,evm=trace", "--pruning=archive" ]
