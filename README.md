@@ -45,7 +45,8 @@ Run: [zombienet-linux-x64 spawn --provider podman ./psc-small-network.toml](./zo
 ![ump](./docs/ump.png)
 
 ## Evm support
-### metamask (for account)
+
+### Metamask (for account)
 ```txt
 Network name: Polkadot Smart Chain
 RPC URL: https://psc-parachain.coming.chat/rpc
@@ -73,6 +74,14 @@ This [article](./docs/substrate_and_evm_address_on_psc.md) introduce how the Eth
 On PSC, [pallet-assets-bridge](./pallets/assets-bridge/README.md) bind EVM address and Substrate account, bind WASM assets and Erc20 tokens, deposit and withdraw fungible assets between WASM and EVM.
 
 This [tool](./scripts/js/src/evm_to_dot.js) can convert EVM address to Substrate(Polkadot) account.
+
+As we all know, DOT decimals=10, Metamask supports evm chain with decimals=18 by default.
+
+In order to be compatible with Metamask, [chainx-frontier](https://github.com/chainx-org/frontier) has done the following for Native Currency Balance
+- (1) `wasm -> evm` (get_Balance): expand 10^8
+- (2) `evm -> wasm` (calc gas fee): shrink 10^8
+
+It is safe and acceptable.
 
 ## Basic data
 ```txt
