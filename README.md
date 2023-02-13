@@ -83,6 +83,10 @@ In order to be compatible with Metamask, [chainx-frontier](https://github.com/ch
 
 It is safe and acceptable.
 
+### Deploy contracts
+
+Follow this [test guide](./docs/test_guide.md), learn how to deploy evm contracts.
+
 ## Basic data
 ```txt
 EXISTENTIAL_DEPOSIT = 0.01 DOT
