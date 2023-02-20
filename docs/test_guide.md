@@ -33,26 +33,26 @@ providing a simple cli tool that allows users to spawn and test ephemeral networ
 
 ### 1.4 Launch testnet with native(recommend)
 
-Make sure that `polkadot` and `psc` in your `PATH`.
+Make sure that `zombienet`, `polkadot` and `psc` in your `PATH`.
 
 ```bash
-cd PSC/zombienet
+cd PSC
 
-./psc-local-lauch-native.sh
+zombienet spawn --provider native ./zombienet/psc-small-network.toml
 ```
 
 ### 1.5 Launch testnet with podman
 We provide `polkadot` and `psc` docker images to support `podman`.
 
 ```bash
-docker pull comingweb3/polkadot
-docker pull comingweb3/psc
+docker pull comingweb3/polkadot:v0.9.32 
+docker pull comingweb3/psc:latest
 ```
 
 ```bash
-cd PSC/zombienet
+cd PSC
 
-./psc-local-lauch-podman.sh
+zombienet spawn --provider podman ./zombienet/psc-small-network.toml
 ```
 
 
@@ -71,13 +71,13 @@ Direct link: `https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9977#/explorer`
 
 ### 2.4 Transfer DOT from relaychain to parachain by DMP
 
-transfer 1000000 DOT (decimals=10) to Alice(`15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5`)
+transfer `10000000000000000` (means 1000000 DOT, decimals=10) to Alice(`5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY`)
 
 ![dmp](./dmp.png)
 
 ### 2.5 Transfer DOT from parachain to relaychain by UMP
 
-transfer 100000 DOT (decimals=10) to Alice(`15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5`)
+transfer `1000000000000000` (means 100000 DOT, decimals=10) to Alice(`15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5`)
 
 ![ump](./ump.png)
 
@@ -135,11 +135,13 @@ The evm address `0x6CfE5574639Ba46d74b6b67D2651d1470E10BA9a` has been bound to t
 
 Call `assetsBridge->teleport`
 
+deposit `1000000000000` (means 100 DOT, decimals=10)
+
 ![deposit1](./deposit1.png)
 
 ![deposit2](./deposit2.png)
 
-The transferable DOTs is `99.99`, because `EXISTENTIAL_DEPOSIT = 0.01 DOT` on PSC.
+The transferable DOT is `99.99`, because `EXISTENTIAL_DEPOSIT = 0.01 DOT` on PSC.
 
 For more details, By [this tool](../scripts/js/src/evm_to_dot.js), 
 we can get the evm address's proxy substrate account.
@@ -152,11 +154,11 @@ dot account:  15gBPp5zAgaxtgzMi843onWu1gUuXbKMAy5Xu3XTNKcUqreH
 
 ![deposit3](./deposit3.png)
 
-The balance is indeed `100` DOTs.
+The balance is indeed `100` DOT.
 
 ### 3.4 Transfer DOTs to other evm account by metamask
 
-Transfer `10` DOTs from `0x6CfE5574639Ba46d74b6b67D2651d1470E10BA9a` to `0xcaf084133cbdbe27490d3afb0da220a40c32e307`
+Transfer `10` DOT from `0x6CfE5574639Ba46d74b6b67D2651d1470E10BA9a` to `0xcaf084133cbdbe27490d3afb0da220a40c32e307`
 
 ![transfer1](./transfer1.png)
 
@@ -166,9 +168,9 @@ Transfer `10` DOTs from `0x6CfE5574639Ba46d74b6b67D2651d1470E10BA9a` to `0xcaf08
 
 The evm address `0x6CfE5574639Ba46d74b6b67D2651d1470E10BA9a` has been bound to the `Alice` substrate address `15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5`.
 
-`Alice` Call `assetsBridge->teleport` to withdraw `10` DOTs from `0x6CfE5574639Ba46d74b6b67D2651d1470E10BA9a`,
+`Alice` Call `assetsBridge->teleport` to withdraw `100000000000` (means 10 DOT, decimals=10) from `0x6CfE5574639Ba46d74b6b67D2651d1470E10BA9a`,
 
-And it will deposit `10` DOTs into `Alice(15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5)`.
+And it will deposit `100000000000` (means 10 DOT, decimals=10) into `Alice(15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5)`.
 
 ![withdraw1](./withdraw1.png)
 
@@ -178,7 +180,7 @@ And it will deposit `10` DOTs into `Alice(15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1Mg
 
 ### 4.1 Mint some wasm assets
 
-Mint `1000` Reserved0(decimals = `18`) to `Alice`
+Mint `1000000000000000000000` (means 1000 Reserved0, decimals = 18) to `Alice`
 
 ![mint1](./mint1.png)
 
@@ -221,26 +223,32 @@ Get the contract address `0xf3607524cAB05762cB5F0cAb17e4cA3A0F0b4E87`
 
 ### 4.3 Bind wasm Reserved0 and erc20 Reserved0
 
+For this guide, the admin of `assets-bridge` is Alice.
+
+In the production environment, the admin of `assets-bridge` **must** audits 
+whether the erc20 contract implements `IAssetsBridge` interface and 
+whether it has the `AssetsBridgeAdmin` modifier.
+
 Call `assetsBridge->register`
 
 ![register1](./register1.png)
 
 
 ### 4.4 Deposit Reserved0 (wasm -> evm)
-Deposit `1000` Reserved0 from wasm to evm
+Deposit `1000000000000000000000` (means 1000 Reserved0, decimals = 18) Reserved0 from wasm to evm
 
 ![deposit_a1](./deposit_a1.png)
 
-Before the balance is `0`, now is `1000000000000000000000`
+Before the balance is `0`, now is `1000000000000000000000` (means 1000 Reserved0, decimals = 18)
 
 ![deposit_a2](./deposit_a2.png)
 
 ### 4.5 Withdraw Reserved0 (evm -> wasm)
 
-Withdraw `1000` Reserved0 from evm to wasm
+Withdraw `1000000000000000000000` (means 1000 Reserved0, decimals = 18) from evm to wasm
 
 ![withdraw_a1](./withdraw_a1.png)
 
-Before the balance is `1000000000000000000000`, now is `0`
+Before the balance is `1000000000000000000000` (means 1000 Reserved0, decimals = 18), now is `0`
 
 ![withdraw_a2](./withdraw_a2.png)

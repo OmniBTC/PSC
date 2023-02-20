@@ -25,6 +25,9 @@ In AssetsBridge
   - `set_admin`: set new the admin of `AssetsBridge`.
   - `force_unregister`: force unbond substrate assets and erc20 contract address.
 
+In the production environment, the admin of assets-bridge must audits whether the erc20 contract 
+implements `IAssetsBridge` interface and whether it has the `AssetsBridgeAdmin` modifier.
+
 ## Work Flow
 
 - (1) bond `Assets(wasm)` and `Tokens(evm)`: admin call `register`.
